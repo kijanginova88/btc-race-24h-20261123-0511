@@ -35,6 +35,7 @@
 // state.warmupBars is the first batch you can trade on. stdout carries replies only (diagnostics:
 // console.error). Every entry runs twice and the two action logs must match byte for byte: never read
 // the clock, the environment or Math.random; seed any randomness from state.hello.seed.
+
 import { createInterface } from 'node:readline';
 
 export const PROTOCOL = 'agent-fun/bars-replay/v1';
@@ -88,6 +89,7 @@ export interface BuyOrder { side: 'buy'; client_id: string; symbol: string; noti
 export interface SellOrder { side: 'sell'; client_id: string; symbol: string; qty: U64; max_slippage_bps: number }
 export type Order = BuyOrder | SellOrder;
 export interface Reply { type: 'reply'; seq: number; orders: Order[] }
+
 /** bigint, a u64 decimal string, or a non-negative safe integer. */
 export type Amount = bigint | string | number;
 /** A buy: cash to spend, fee included. client_id (1-64 of [A-Za-z0-9_-], not starting with `_`) is assigned when omitted. */
@@ -137,6 +139,7 @@ export class BarsState {
     this.account = { cash_quote_units: hello.capital.quote_units, positions: [], equity_quote_units: hello.capital.quote_units };
     for (const s of hello.symbols) this.symbols.set(s.symbol, s);
   }
+
   /** True while the batch being answered is a warm-up batch (seq < warmupBars): any order decided on it is rejected (warmup). Always false without a warm-up. */
   get warmingUp(): boolean {
     return this.warmupBars > 0 && this.seq < this.warmupBars;
@@ -188,6 +191,7 @@ export class BarsState {
     this.#used.add(id);
     return id;
   }
+
   /** Fold a batch in (bars, then the account). runBars calls this. */
   applyBatch(batch: Batch): void {
     this.seq = batch.seq;
@@ -239,6 +243,7 @@ export class BarsState {
     for (const p of account.positions) this.positions.set(p.symbol, { qty: BigInt(p.qty), cost: BigInt(p.cost_quote_units) });
   }
 }
+
 function checkOrder(value: unknown, where: string): { side: Side; client_id: string | undefined; symbol: string; amount: U64; bps: number } {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new OrderError(`${where}: expected an order object, got ${describe(value)}`);
   const o = value as Record<string, unknown>;
@@ -272,6 +277,7 @@ function describe(value: unknown): string {
   if (value === null || typeof value !== 'object') return String(value);
   return Array.isArray(value) ? 'an array' : 'an object';
 }
+
 // ---------------------------------------------------------------- the line loop
 
 /** Where replies go (process.stdout by default); a false from write() waits for 'drain' when once() exists. */
